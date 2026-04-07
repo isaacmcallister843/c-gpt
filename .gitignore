@@ -168,6 +168,19 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+# __pycache__ 
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# local venv 
+c-gpt-core/
+
+# Data cleaning
+*.pt
+*.parquet 
+
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
@@ -193,6 +206,9 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# dont push local stock fish 
+misc/stockfish/
 
 # Cursor
 #  Cursor is an AI-powered code editor. `.cursorignore` specifies files/directories to
