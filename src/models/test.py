@@ -6,7 +6,7 @@ import chess
 from IPython.display import display, clear_output
 import chess.svg
 
-from config import config
+from config import config, ModelParams
 
 import torch 
 from stockfish import Stockfish
@@ -29,9 +29,23 @@ vocab_size = len(itos)
 decode = lambda x : [itos[val] for val in x]
 encode = lambda x : [stoi[val] for val in x]
 
-# ----- Tests 
+# ----- Simple load test 
+def test_load_model_GPT(model_params : ModelParams):
+    model = GPT(
+        vocab_size=vocab_size,
+        n_embd=model_params.n_embd,
+        n_head=model_params.n_head,
+        n_layer=model_params.n_layer,
+        block_size=model_params.block_size,
+        dropout=model_params.dropout,
+        device= config.device
+    )
+    print("number of parameters in model : ", sum(p.numel() for p in model.parameters() if p.requires_grad)) 
+
+
+# ----- Evaluation Tests  
 def play_game_test(
-        model_path : str, 
+        model, 
         stock_lvl : int = 1, 
         display_game : bool = False, 
         delay : float= .5
@@ -80,22 +94,7 @@ def play_game_test(
         stockfish.make_moves_from_start(uci_moves)
         uci_move = stockfish.get_best_move()
         board.push_uci(uci_move)
-    
-    # load in model 
-    model = GPT(
-        vocab_size=vocab_size,
-        n_embd=config.n_embd,
-        n_head=config.n_head,
-        n_layer=config.n_layer,
-        block_size=config.block_size,
-        dropout=config.dropout,
-        device=config.device,
-    ).to(device)
-
-    checkpoint = torch.load(model_path, map_location=device)
-    model.load_state_dict(checkpoint['model_state_dict'])
-    model.eval()
-    
+      
     # set board state 
     board = chess.Board()
 
@@ -146,4 +145,18 @@ def play_game_test(
         'game_length' : total_moves
     }
     return output 
+
+# ----- Experiments 
+if __name__ == '__main__': 
+    from config import model_params
+    print(
+        f"""
+        Training Config:
+        device:     {device}
+        model:      {model_params.save_name}
+        batch_size: {config.batch_size}
+        max_iters:  {config.max_iters}
+        """
+    )    
+    test_load_model_GPT(model_params=model_params)
 
