@@ -57,6 +57,7 @@ class FeedForward(nn.Module):
 
 class Block(nn.Module):
     def __init__(self, n_embd, n_head, block_size, dropout):
+        assert n_embd % n_head == 0
         super().__init__()
         head_size = n_embd // n_head
         self.sa = MultiHeadAttention(n_embd, n_head, head_size, block_size, dropout)
@@ -71,6 +72,7 @@ class Block(nn.Module):
 
 class GPT(nn.Module):
     def __init__(self, vocab_size, n_embd, n_head, n_layer, block_size, dropout, device):
+                
         super().__init__()
         self.block_size = block_size
         self.device = device
@@ -98,8 +100,6 @@ class GPT(nn.Module):
             loss = F.cross_entropy(logits, targets, ignore_index=0)
 
         return logits, loss
-
-
 
     def generate_probs(self, idx):
         idx_cond = idx[:, -self.block_size:]

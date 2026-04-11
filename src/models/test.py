@@ -105,6 +105,8 @@ def play_game_test(
         legal_indices = [stoi[m] for m in legal_san if m in stoi]
         mask = torch.zeros_like(probs)
         mask[legal_indices] = 1
+        
+        probs = probs * mask
 
         # Check if sum is 0, if so make a random move - this shouldnt really call 
         if probs.sum() == 0:
@@ -112,7 +114,6 @@ def play_game_test(
             board.push_san(san_move)
             return san_move
         
-        probs = probs * mask
         probs = probs / probs.sum()
         
         move_idx = torch.multinomial(probs, num_samples=1).item()
@@ -145,7 +146,6 @@ def play_game_test(
     outcome = board.outcome()
     show_board(board, display_game, size = size, delay=delay)
 
-
     if outcome.winner is None: 
         winner = "draw"
     elif outcome.winner: 
@@ -162,7 +162,7 @@ def play_game_test(
     }
     return output 
 
-# ----- Experiments 
+# ----- Testing before training run  
 if __name__ == '__main__': 
     from config import model_params, training_params
     print(

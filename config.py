@@ -10,7 +10,7 @@ MODEL_DIR = ROOT / 'models'
 device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 @dataclass
-class HF_DATA_CONFIG: 
+class DataConfig: 
     n_rows: int = 14000000 # get all rows 
     min_elo : int = 2100 
 
@@ -76,5 +76,5 @@ large_training_run = TrainConfig(
 # ------- End points
 model_params = bishop_params
 training_params = small_training_run
-hf_data_config = HF_DATA_CONFIG()
+hf_data_config = DataConfig()
 test_config = TestConfig(eval_num_games = 1)

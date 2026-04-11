@@ -38,7 +38,6 @@ if __name__ == '__main__':
 
     # ------ create x and y datasets 
     dataset = load_dataset(str(DATA_DIR / 'raw'), data_files = 'dataset.parquet' )['train']
-    # dataset = dataset.filter(lambda ex: ex['white_elo'] is not None and ex['white_elo'] >= min_elo)
 
     x = np.zeros((n_rows, block_size))
     y = np.zeros((n_rows, block_size))

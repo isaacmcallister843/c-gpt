@@ -29,7 +29,6 @@ eval_lvl_end = test_config.eval_lvl_end
 eval_lvl_jump = test_config.eval_lvl_jump
 eval_lvl_start = test_config.eval_lvl_start
 eval_num_games = test_config.eval_num_games
-stockfish = Stockfish(path= test_config.stockfish_path)
 
 # ----- Configure save directories 
 MODEL_SAVE_DIR = MODEL_DIR / model_params.save_name 
@@ -93,7 +92,13 @@ def on_eval(model : GPT, step : int) -> None:
     losses = estimate_loss(model)
     print(f"step {step}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
 
-def on_save(model : GPT, optimizer : torch.optim, step : int) -> None: 
+def on_save(
+        model : GPT, 
+        optimizer : torch.optim, 
+        step : int, 
+        stockfish : Stockfish
+    ) -> None:
+
     torch.save(
         {
             'model_state_dict': model.state_dict(),
@@ -119,7 +124,7 @@ def on_save(model : GPT, optimizer : torch.optim, step : int) -> None:
             test_results.append(output_dict)
     
     model.train()
-    print(test_results[0], test_results[-2])
+    print(test_results[0], test_results[-1])
     df_test = pd.DataFrame(test_results)
     
     if not Path(TEST_SAVE_DIR).is_file():
@@ -131,6 +136,10 @@ def on_save(model : GPT, optimizer : torch.optim, step : int) -> None:
 
 # --------- Main
 if __name__ == '__main__': 
+
+    # --------- Load in stockfish model 
+    stockfish = Stockfish(path= test_config.stockfish_path)
+
     # --------- Define Model setup  
     model = GPT(
         vocab_size=vocab_size,
@@ -168,7 +177,7 @@ if __name__ == '__main__':
     for step in range(start_iter, max_iters+1):
 
         if (step % save_and_eval_interval == 0) and (step != 0): 
-            on_save(model, optimizer, step)
+            on_save(model, optimizer, step, stockfish)
         elif step % print_loss_interval == 0:
             on_eval(model, step)
 
