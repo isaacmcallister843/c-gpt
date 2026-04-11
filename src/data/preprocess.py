@@ -16,6 +16,7 @@ if __name__ == '__main__':
     block_size = model_params.block_size
     n_rows = hf_data_config.n_rows
     min_elo = hf_data_config.min_elo
+    training_ds_path = hf_data_config.DATASET_DIR
 
     # ------ create mapping
     stoi = {'<PAD>': 0}
@@ -37,7 +38,7 @@ if __name__ == '__main__':
         json.dump(itos, f, indent=4)
 
     # ------ create x and y datasets 
-    dataset = load_dataset(str(DATA_DIR / 'raw'), data_files = 'dataset.parquet' )['train']
+    dataset = load_dataset('parquet', training_ds_path)['train']
 
     x = np.zeros((n_rows, block_size))
     y = np.zeros((n_rows, block_size))
@@ -53,7 +54,6 @@ if __name__ == '__main__':
 
         try: 
             for j, move in enumerate(game): 
-                
                 game_row[j]= stoi[move] 
         except KeyError: 
             print("Unknown character found : ", move)

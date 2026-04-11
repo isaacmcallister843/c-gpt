@@ -136,6 +136,7 @@ def on_save(
 
 # --------- Main
 if __name__ == '__main__': 
+    
 
     # --------- Load in stockfish model 
     stockfish = Stockfish(path= test_config.stockfish_path)
@@ -187,5 +188,5 @@ if __name__ == '__main__':
         loss.backward()
         optimizer.step()
 
-    on_save(model, optimizer, step)
+    on_save(model, optimizer, step, stockfish)
     torch.save(model.state_dict(), MODEL_SAVE_DIR / f"{model_params.save_name}.pt")

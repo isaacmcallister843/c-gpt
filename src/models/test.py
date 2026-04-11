@@ -39,6 +39,7 @@ def test_load_model_GPT(model_params : ModelParams) -> None:
     print("number of parameters in model : ", sum(p.numel() for p in model.parameters() if p.requires_grad)) 
 
 def test_load_stockfish():
+    from stockfish import Stockfish
     stockfish = Stockfish(path= STOCK_FISH_DIR)
     print("Loaded stockfish correctly")
 
@@ -59,7 +60,7 @@ def show_board(board, display_game, size=250, delay=0):
 
 def play_game_test(
         model, 
-        stockfish : Stockfish,
+        stockfish ,
         stock_lvl : int = 1, 
         display_game : bool = False, 
         delay : float= .5
@@ -105,7 +106,7 @@ def play_game_test(
         legal_indices = [stoi[m] for m in legal_san if m in stoi]
         mask = torch.zeros_like(probs)
         mask[legal_indices] = 1
-        
+
         probs = probs * mask
 
         # Check if sum is 0, if so make a random move - this shouldnt really call 

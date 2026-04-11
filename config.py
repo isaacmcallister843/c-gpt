@@ -13,6 +13,7 @@ device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
 class DataConfig: 
     n_rows: int = 14000000 # get all rows 
     min_elo : int = 2100 
+    DATASET_DIR : str = str(DATA_DIR / 'raw' / 'dataset.parquet')
 
 @dataclass
 class TrainConfig:
@@ -61,10 +62,10 @@ knight_params =  ModelParams(
 )
 
 small_training_run = TrainConfig(
-    batch_size=4, 
-    max_iters = 1000,
+    batch_size=2, 
+    max_iters = 300,
     print_loss_interval = 10,  
-    save_and_eval_interval = 100
+    save_and_eval_interval = 150
 )
 
 large_training_run = TrainConfig(
