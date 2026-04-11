@@ -75,7 +75,7 @@ large_training_run = TrainConfig(
 )
 
 # ------- End points
-model_params = bishop_params
-training_params = small_training_run
+model_params = knight_params
+training_params = large_training_run
 hf_data_config = DataConfig()
-test_config = TestConfig(eval_num_games = 1)
+test_config = TestConfig(eval_num_games = 3)
