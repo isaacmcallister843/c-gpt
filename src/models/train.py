@@ -6,31 +6,37 @@ import pandas as pd
 import json  
 from pathlib import Path
 import sys
+from stockfish import Stockfish
 
-from config import config, model_params
+from config import model_params, DATA_DIR, MODEL_DIR, device, training_params, test_config
 from .model_base import GPT 
 from .test import play_game_test
 
+
 # ----------- Setup 
-# ----- Parameters
-DATA_DIR = config.DATA_DIR
-MODEL_DIR = config.MODEL_DIR
+# ----- Unpack training_params 
+batch_size = training_params.batch_size
+learning_rate = training_params.learning_rate
+max_iters = training_params.max_iters
+train_test_split = training_params.train_test_split
+continue_training = training_params.continue_training
+save_and_eval_interval = training_params.save_and_eval_interval
+print_loss_interval = training_params.print_loss_interval
+loss_eval_iter = training_params.loss_eval_iter
 
-batch_size = config.batch_size
-device = config.device
-learning_rate = config.learning_rate
-max_iters = config.max_iters
+# ------ Unpack test_params 
+eval_lvl_end = test_config.eval_lvl_end
+eval_lvl_jump = test_config.eval_lvl_jump
+eval_lvl_start = test_config.eval_lvl_start
+eval_num_games = test_config.eval_num_games
+stockfish = Stockfish(path= test_config.stockfish_path)
 
-# Configure save directories 
+# ----- Configure save directories 
 MODEL_SAVE_DIR = MODEL_DIR / model_params.save_name 
 MODEL_CHK_DIR = MODEL_DIR / model_params.save_name  / 'check_points' 
 TEST_SAVE_DIR = MODEL_DIR / model_params.save_name  / f"{model_params.save_name}.csv"  
 
-loss_check_interval =  100
-eval_iters = 20
-save_and_eval_interval = 1000
-
-eval_num_games = 1
+# ----- set seed 
 torch.manual_seed(42)
 
 # --------- Setup DIR if need
@@ -48,14 +54,14 @@ y = torch.load(DATA_DIR / 'processed' / 'y.pt').to(device)
 n_rows = x.shape[0]
 
 # define train / test split 
-n = int(0.9 * n_rows)
+n = int(train_test_split * n_rows)
 train_data_x = x[:n]
 train_data_y = y[:n]
 val_data_x = x[n:]
 val_data_y = y[n:]
 
 # ---- Define batch retrieval method 
-def get_batch(split): 
+def get_batch(split : str): 
     if split == 'train': 
         split_data_x, split_data_y = train_data_x, train_data_y
     else:
@@ -70,12 +76,12 @@ def get_batch(split):
 
 # -------- Helpers 
 @torch.no_grad()
-def estimate_loss():
+def estimate_loss(model : GPT) -> dict:
     out = {}
     model.eval()
     for split in ['train', 'val']:
-        losses = torch.zeros(eval_iters)
-        for k in range(eval_iters):
+        losses = torch.zeros(loss_eval_iter)
+        for k in range(loss_eval_iter):
             X, Y = get_batch(split)
             logits, loss = model(X, Y)
             losses[k] = loss.item()
@@ -83,11 +89,11 @@ def estimate_loss():
     model.train()
     return out
 
-def on_eval():
-    losses = estimate_loss()
+def on_eval(model : GPT, step : int) -> None:
+    losses = estimate_loss(model)
     print(f"step {step}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
 
-def on_save(): 
+def on_save(model : GPT, optimizer : torch.optim, step : int) -> None: 
     torch.save(
         {
             'model_state_dict': model.state_dict(),
@@ -96,12 +102,16 @@ def on_save():
         }, 
         MODEL_CHK_DIR / f'checkpoint_{step}.pt'
     )
-    losses = estimate_loss()
+    losses = estimate_loss(model)
     model.eval()
     test_results = []
     for _ in range(eval_num_games): 
-        for lvl in range(5,25,5):
-            output_dict = play_game_test(model = model, stock_lvl=lvl)
+        for lvl in range(eval_lvl_start, eval_lvl_end, eval_lvl_jump):
+            output_dict = play_game_test(
+                model = model, 
+                stock_lvl = lvl, 
+                stockfish= stockfish
+            )
             output_dict['step'] = step 
             output_dict['stock_lvl'] = lvl 
             output_dict['train_loss'] = losses['train'].item()
@@ -119,48 +129,54 @@ def on_save():
         result = pd.concat([df_prev, df_test])
         result.to_csv(TEST_SAVE_DIR, index=False)
 
-# --------- Define Model setup  
-model = GPT(
-    vocab_size=vocab_size,
-    n_embd=model_params.n_embd,
-    n_head=model_params.n_head,
-    n_layer=model_params.n_layer,
-    block_size=model_params.block_size,
-    dropout=model_params.dropout,
-    device=config.device,
-).to(device)
+# --------- Main
+if __name__ == '__main__': 
+    # --------- Define Model setup  
+    model = GPT(
+        vocab_size=vocab_size,
+        n_embd=model_params.n_embd,
+        n_head=model_params.n_head,
+        n_layer=model_params.n_layer,
+        block_size=model_params.block_size,
+        dropout=model_params.dropout,
+        device=device,
+    ).to(device)
 
-optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
-start_iter = 0 
+    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
+    start_iter = 0 
 
-if config.continue_training:
-    files = sorted(MODEL_CHK_DIR.iterdir(), key=lambda f: int(f.stem.split('_')[-1]))
-    if len(files) == 0: 
-        print('no valid checkpoints to load, start a new training run')
-        sys.exit(0)
+    if continue_training:
+        files = sorted(
+            MODEL_CHK_DIR.iterdir(), 
+            key=lambda f: int(f.stem.split('_')[-1])
+        )
+        
+        if len(files) == 0: 
+            print('no valid checkpoints to load, start a new training run')
+            sys.exit(0)
 
-    last_chk_pt = files[-1]
-    print('loading chk_pt : ',  last_chk_pt)
+        last_chk_pt = files[-1]
+        print('loading chk_pt : ',  last_chk_pt)
 
-    checkpoint = torch.load(last_chk_pt, map_location=device)
-    model.load_state_dict(checkpoint['model_state_dict'])
-    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    start_iter = checkpoint['step']
-    model.train()
+        checkpoint = torch.load(last_chk_pt, map_location=device)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        start_iter = checkpoint['step']
+        model.train()
 
-# -------- Training run 
-for step in range(start_iter, max_iters+1):
-    if step % loss_check_interval == 0:
-        on_eval()
-    
-    if step % save_and_eval_interval == 0: 
-        on_save()
-    
-    xb, yb = get_batch('train')
-    logits, loss = model(xb, yb)
-    optimizer.zero_grad(set_to_none=True)
-    loss.backward()
-    optimizer.step()
+    # -------- Training run 
+    for step in range(start_iter, max_iters+1):
 
-on_save()
-torch.save(model.state_dict(), MODEL_SAVE_DIR / f"{model_params.save_name}.pt")
+        if (step % save_and_eval_interval == 0) and (step != 0): 
+            on_save(model, optimizer, step)
+        elif step % print_loss_interval == 0:
+            on_eval(model, step)
+
+        xb, yb = get_batch('train')
+        logits, loss = model(xb, yb)
+        optimizer.zero_grad(set_to_none=True)
+        loss.backward()
+        optimizer.step()
+
+    on_save(model, optimizer, step)
+    torch.save(model.state_dict(), MODEL_SAVE_DIR / f"{model_params.save_name}.pt")

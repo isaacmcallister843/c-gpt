@@ -99,15 +99,7 @@ class GPT(nn.Module):
 
         return logits, loss
 
-    def generate(self, idx, max_new_tokens):
-        for _ in range(max_new_tokens):
-            idx_cond = idx[:, -self.block_size:]
-            logits, _ = self(idx_cond)
-            logits = logits[:, -1, :]
-            probs = F.softmax(logits, dim=-1)
-            idx_next = torch.multinomial(probs, num_samples=1)
-            idx = torch.cat((idx, idx_next), dim=1)
-        return idx
+
 
     def generate_probs(self, idx):
         idx_cond = idx[:, -self.block_size:]
@@ -115,3 +107,13 @@ class GPT(nn.Module):
         logits = logits[:, -1, :]
         probs = F.softmax(logits, dim=-1)
         return probs
+    
+    def generate(self, idx, max_new_tokens):
+        for _ in range(max_new_tokens):
+            probs = self.generate_probs(idx)
+            idx_next = torch.multinomial(probs, num_samples=1)
+            idx = torch.cat((idx, idx_next), dim=1)
+        return idx
+
+    def generate_single_step(self, idx):
+        return self.generate(idx, max_new_tokens=1)[0][-1].item()
