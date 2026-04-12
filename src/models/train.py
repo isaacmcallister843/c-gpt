@@ -47,8 +47,8 @@ with open(DATA_DIR / 'processed' / 'itos.json', 'r') as file:
 vocab_size = len(itos)
 
 # ---- Loading in x and y datasets 
-x = torch.load(DATA_DIR / 'processed' / 'x.pt').to(device)
-y = torch.load(DATA_DIR / 'processed' / 'y.pt').to(device)
+x = torch.load(DATA_DIR / 'processed' / 'x.pt')
+y = torch.load(DATA_DIR / 'processed' / 'y.pt')
 
 n_rows = x.shape[0]
 

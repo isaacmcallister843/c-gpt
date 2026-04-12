@@ -38,7 +38,8 @@ if __name__ == '__main__':
         json.dump(itos, f, indent=4)
 
     # ------ create x and y datasets 
-    dataset = load_dataset('parquet', training_ds_path)['train']
+    #dataset = load_dataset('parquet', training_ds_path)['train']
+    dataset = load_dataset('parquet', data_files='/home/isaac_mcallister/c-gpt/data/raw/dataset.parquet')['train']
 
     x = np.zeros((n_rows, block_size))
     y = np.zeros((n_rows, block_size))

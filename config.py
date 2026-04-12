@@ -11,7 +11,7 @@ device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 @dataclass
 class DataConfig: 
-    n_rows: int = 14000000 # get all rows 
+    n_rows: int = 8000000 # get all rows 
     min_elo : int = 2100 
     DATASET_DIR : str = str(DATA_DIR / 'raw' / 'dataset.parquet')
 
@@ -32,7 +32,7 @@ class TestConfig:
     eval_lvl_start: int = 5
     eval_lvl_end: int = 25
     eval_lvl_jump: int = 5
-    stockfish_path: Path = ROOT / "misc/stockfish/stockfish-windows-armv8"
+    stockfish_path: Path = Path("/usr/games/stockfish")
 
 @dataclass
 class ModelParams(): 
@@ -71,7 +71,8 @@ small_training_run = TrainConfig(
 large_training_run = TrainConfig(
     batch_size= 64, 
     max_iters = 70000, 
-    save_and_eval_interval = 5000
+    continue_training = True,    
+    save_and_eval_interval = 2000
 )
 
 # ------- End points
