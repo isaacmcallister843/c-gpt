@@ -1,0 +1,25 @@
+# configs/knight.toml
+[model]
+n_embd = 256
+n_head = 8
+n_layer = 8
+block_size = 180
+dropout = 0.2
+save_name = "knight"
+
+[training]
+batch_size = 64
+max_iters = 70000
+learning_rate = 3e-4
+save_and_eval_interval = 2000
+
+[data]
+min_elo = 2100
+train_test_split = 0.9
+
+[evaluation]
+eval_num_games = 3
+stockfish_path = "stockfish"
+
+[save]
+save_cloud = 1 

@@ -2,122 +2,126 @@
 
 A decoder-only transformer trained on millions of chess games to predict next moves through autoregressive sequence modeling. The model learns to play chess purely from move sequences in standard algebraic notation (SAN), with no explicit knowledge of chess rules or board state.
 
-## Results
-
-The model was trained on ~10M high-ELO (2100+) games from the [angeluriot/chess_games](https://huggingface.co/datasets/angeluriot/chess_games) HuggingFace dataset using an NVIDIA T4 GPU on GCP.
-
-**Loss curve:**
-
-![Training and validation loss](imgs/knight_loss.png)
-
-The model converged to a cross-entropy loss of ~2.4 after approximately 40,000 training steps.
-
-**Illegal move rate:**
-
-![Illegal move rate over training](imgs/knight_illegal_moves.png)
-
-The illegal move rate decreased from ~20% to ~8% over training, meaning the model learns to generate legal chess moves ~92% of the time purely from sequence prediction, with no explicit chess rules encoded.
-
-## Architecture
-
-The model follows the GPT architecture from Vaswani et al. (2017) and Karpathy's nanoGPT implementation:
-
-- Decoder-only transformer with causal masking
-- Token embedding + learned positional embedding
-- Multi-head self-attention with scaled dot-product attention
-- Feed-forward layers with ReLU activation and 4x expansion
-- Pre-norm layer normalization with residual connections
-- Move-level tokenization in standard algebraic notation
-
-**Knight model (primary):**
-
-| Parameter | Value |
-|-----------|-------|
-| Embedding dim | 256 |
-| Attention heads | 8 |
-| Layers | 8 |
-| Context window | 180 moves |
-| Vocab size | ~5,000 |
-| Total parameters | ~15M |
-
 ## Project Structure
 
 ```
 c-gpt/
-├── config.py                  # Hyperparameters and model configurations
+├── configs/                   # TOML experiment configurations
+│   ├── bishop.toml
+│   └── knight.toml
+├── scripts/
+│   ├── preprocess.py          # Data pipeline: HuggingFace -> tokenized tensors
+│   ├── train.py               # Training loop with checkpointing and evaluation
+│   └── checks.py              # Sanity checks
 ├── src/
-│   ├── data/
-│   │   └── preprocess.py      # Data pipeline: HuggingFace -> tokenized tensors
-│   └── models/
+│   └── cgpt/
 │       ├── model_base.py      # GPT model architecture
-│       ├── train.py           # Training loop with checkpointing and evaluation
-│       └── test.py            # Stockfish evaluation framework
-├── data/
-│   ├── raw/                   # Source datasets
-│   └── processed/             # Tokenized tensors and vocab mappings
+│       ├── evaluate.py        # Stockfish evaluation framework
+│       ├── storage.py         # Local and GCS storage backends
+│       ├── paths.py           # Project path constants
+│       └── tests.py           # Tests
+├── data/                      # Tokenized tensors and vocab mappings
 ├── models/                    # Saved checkpoints and evaluation results
+├── configs/                   # Experiment configs
 ├── notebooks/                 # Development and analysis notebooks
-└── misc/
-    └── san_strings/           # Chess move vocabulary
+├── misc/
+│   └── san_strings/           # Chess move vocabulary
+├── cloud_instance_setup.sh    # GCP VM setup script
+└── pyproject.toml             # Package and dependency configuration
 ```
 
 ## Setup
 
+### Local (Windows/Mac)
+
 ```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
-pip install numpy pandas datasets chess stockfish python-chess
+git clone <repo-url>
+cd c-gpt
+python -m venv .venv
+source .venv/bin/activate      # Linux/Mac
+.venv\Scripts\activate         # Windows
+
+pip install -e .
 ```
 
-Stockfish is required for evaluation:
-```bash
-# Linux
-sudo apt-get install stockfish
+Stockfish must be installed separately. On Windows, download from https://stockfishchess.org/download/ and set the path in your config TOML.
 
-# Windows: download from https://stockfishchess.org/download/
+### Cloud (GCP)
+
+```bash
+git clone 
+cd c-gpt
+./cloud_instance_setup.sh
 ```
+
+This installs Stockfish via apt, creates a virtual environment, and installs the package with cloud dependencies (`google-cloud-storage`).
+
+On Linux, Stockfish is available on the system PATH after install, so set `stockfish_path = "stockfish"` in your config.
 
 ## Usage
 
+All scripts are run from the project root with a config file as the argument.
+
 **Preprocess data:**
 ```bash
-python -m src.data.preprocess
+python scripts/preprocess.py configs/bishop.toml
 ```
-Streams games from HuggingFace, filters by ELO, tokenizes moves, and saves tensors to `data/processed/`.
 
 **Train:**
 ```bash
-python -m src.models.train
+python scripts/train.py configs/bishop.toml
 ```
-Configure training parameters and model architecture in `config.py`. Supports checkpoint recovery for interrupted training runs.
 
-**Evaluate:**
+**Run checks:**
 ```bash
-python -m src.models.test
+python scripts/checks.py configs/bishop.toml
 ```
-Plays games against Stockfish at configurable skill levels, tracking illegal move rate, win/loss, and game length.
 
-## How It Works
+## Configuration
 
-The model treats chess games as sequences of move tokens and learns to predict the next move given the preceding moves. During training, the causal mask ensures each position can only attend to previous moves, mirroring the autoregressive generation process.
+Experiments are configured via TOML files in `configs/`. Example:
 
-At inference, the model generates a move and checks legality. If the move is illegal, it falls back to masking illegal moves from the probability distribution and resampling.
+```toml
+[model]
+n_embd = 256
+n_head = 8
+n_layer = 8
+block_size = 180
+dropout = 0.2
+save_name = "knight"
 
-The model implicitly learns piece movement rules, opening theory, and basic positional patterns through next-token prediction alone, without any explicit chess knowledge.
+[training]
+batch_size = 64
+learning_rate = 3e-4
+max_iters = 50000
+device = "cuda"
+continue_training = 0
+# ...
+
+[data]
+dataset_name = "main_set"
+min_elo = 2100
+
+[evaluation]
+stockfish_path = "stockfish"
+# ...
+
+[storage]
+save_cloud = 0
+
+[cloud]
+bucket_name = "cgpt-main"
+```
+
+## Architecture
+
+Decoder-only transformer with causal masking, following the GPT architecture. Move-level tokenization in standard algebraic notation. See the source in `src/cgpt/model_base.py` for details.
 
 ## Limitations
 
 - No explicit board state representation forces the model to reconstruct position from move history
 - Tactical depth is limited at 15M parameters
 - The model plays at a beginner level, understanding piece movement and openings but lacking strategic depth
-
-## Future Work (v2)
-
-- Board state encoding as auxiliary input to provide spatial awareness
-- Logit masking during training to ensure every gradient update learns from legal moves only
-- Larger model (124M parameters) with multi-GPU training
-- Dockerized training pipeline with GCS artifact storage
 
 ## Acknowledgments
 

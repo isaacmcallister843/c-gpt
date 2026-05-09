@@ -1,0 +1,20 @@
+[project]
+name = "cgpt"
+version = "0.2.0"
+
+dependencies = [
+    "chess",
+    "datasets",
+    "numpy",
+    "pandas",
+    "stockfish",
+    "torch",
+]
+
+[project.optional-dependencies]
+cloud = ["google-cloud-storage"]
+notebooks = ["ipython"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
