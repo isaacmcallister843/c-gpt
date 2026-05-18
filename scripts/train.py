@@ -26,7 +26,7 @@ torch.manual_seed(42)
 if __name__ == '__main__': 
         
     # ----- Setup storage manager  
-    save_cloud = config['storage']['save_cloud']
+    save_cloud = config['save_cloud']
     if save_cloud: 
         storage_manager = CloudStorage.from_config(config)
     else:

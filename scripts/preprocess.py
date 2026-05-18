@@ -21,12 +21,14 @@ logger = logging.getLogger(__name__)
 
 if __name__ == '__main__': 
     # ----- Setup storage 
-    save_cloud = config['storage']['save_cloud']
+    save_cloud = config['save']['save_cloud']
     if save_cloud: 
-        gcs = fs.GcsFileSystem()
         storage_manager = CloudStorage.from_config(config)
-        path = config['data']['dataset_path'].replace('gs://', '')
-        parquet_file = pq.ParquetFile(path, filesystem=gcs)
+        path = config['data']['dataset_path'].replace('gs://', '') # gs url expected 
+        parquet_file = pq.ParquetFile(
+            path, 
+            filesystem = fs.GcsFileSystem()
+        )
     else:
         storage_manager = LocalStorage.from_config(config)
         parquet_file = pq.ParquetFile(config['data']['dataset_path'])
@@ -44,11 +46,10 @@ if __name__ == '__main__':
     with open(config['data']['san_string_path'], 'r') as file:
         for line in file:
             stoi[str(line.strip())] = current_idx_stoi
-            current_idx_stoi +=1 
+            current_idx_stoi += 1 
 
     # get encoder for vectorization 
-    def encode(x): 
-        return stoi[x] 
+    def encode(x): return stoi[x] 
     encode_vec = np.vectorize(encode)
 
     # get decoding map 
@@ -74,7 +75,7 @@ if __name__ == '__main__':
 
     x = np.concatenate(chunks, axis=0)
     y = np.zeros(x.shape)
-    y[:, 0:(block_size-1)] = x[:, 1::] 
+    y[:, 0:(block_size-1)] = x[:, 1::] # standard transformer y setup 
 
     logger.info(f"x_shape : {x.shape} and y_shape : {y.shape}")
 

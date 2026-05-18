@@ -91,7 +91,6 @@ class GPT(nn.Module):
             n_head = {self.n_head}, 
             n_layer = {self.n_layer},
             block_size = {self.block_size}, 
-
         """
     
     def forward(self, idx, targets=None):

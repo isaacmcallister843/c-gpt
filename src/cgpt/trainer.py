@@ -36,7 +36,6 @@ class Trainer:
         self.cur_step = 0 
         self.cur_losses = None 
 
-
     @torch.no_grad()
     def estimate_loss(self) -> dict:
         out = {}
@@ -72,7 +71,14 @@ class Trainer:
             self.optimizer.zero_grad(set_to_none=True)
             loss.backward()
             self.optimizer.step()
-    
+        
+        # call everything again in the final step 
+        self.estimate_loss()
+        self.model.eval()
+        for func in self.callbacks: func.on_save(self)
+        for func in self.callbacks: func.on_monitor(self)
+        self.model.train() # ensure we don't modify the internal model state silently
+
     @classmethod
     def from_config(cls, model, optimzier, callbacks, train_loader, val_loader, storage_manager, config): 
         return cls(

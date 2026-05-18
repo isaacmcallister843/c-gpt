@@ -2,8 +2,8 @@
 [model]
 n_embd = 256
 n_head = 8
-n_layer = 8
-block_size = 180
+n_layer = 10
+block_size = 120
 dropout = 0.2
 save_name = "knight"
 
@@ -16,24 +16,21 @@ monitor_event_inter = 3000
 loss_eval_iter = 5 
 device = 'cuda'
 train_test_split = 0.9
-continue_training = 0 
-
 
 [data]
 min_elo = 2100
-n_rows = 2000
+n_rows = 100000
 dataset_name = "main_set" 
+dataset_path = "gs://c-gpt-data/datasets/dataset.parquet"
 san_string_path = "misc/san_strings/san_string.txt"
 
 [evaluation]
 eval_num_games = 3
-eval_lvl_start = 5
-eval_lvl_end = 25
-eval_lvl_jump = 5
+eval_lvls = [1,5,10]
 stockfish_path = "stockfish"
 
 [save]
 save_cloud = 1 
 
 [cloud]
-bucket_name = 'cgpt-main' 
+bucket_name = 'c-gpt-data'
