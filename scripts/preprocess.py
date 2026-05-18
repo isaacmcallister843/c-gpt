@@ -56,10 +56,11 @@ if __name__ == '__main__':
 
     # ------ Proccess file 
     chunks = []
-
+    total_rows = 0
     for batch in parquet_file.iter_batches(batch_size=chunk_size):
         df = batch.to_pandas()
         df = df[df['white_elo'] > min_elo]
+        total_rows += len(df)
         moves = df['moves_san'].apply(lambda x: x[0:block_size])
         add = moves.apply(
             lambda x: np.concatenate((x, np.repeat(['<PAD>'], block_size - len(x))))
@@ -67,12 +68,15 @@ if __name__ == '__main__':
         stack = np.stack(add.values)
         chunks.append(encode_vec(stack))
         logger.info(f"Processed chunk, {len(chunks)} done")
-        if len(chunks) * chunk_size > n_rows: 
+        if total_rows > n_rows: 
+            logger.info(f"ended loop with n_rows = {total_rows}, target = {n_rows}")
             break 
 
     x = np.concatenate(chunks, axis=0)
     y = np.zeros(x.shape)
     y[:, 0:(block_size-1)] = x[:, 1::] 
+
+    logger.info(f"x_shape : {x.shape} and y_shape : {y.shape}")
 
     # convert to pytorch objects
     x_torch = torch.from_numpy(x).long()

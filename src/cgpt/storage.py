@@ -9,7 +9,7 @@ import logging
 
 class ModelStorage(ABC): 
     @abstractmethod
-    def save_checkpoint(self, save_dict: dict, optim_dict: dict, save_name: str, step: int) -> None: 
+    def save_checkpoint(self, save_dict: dict, optim_dict: dict, step: int) -> None: 
         pass
 
     @abstractmethod
@@ -48,21 +48,24 @@ class LocalStorage(ModelStorage):
 
         self.data_dir = data_dir 
         self.data_dir.mkdir(parents=True, exist_ok=True)
-        self.logger = logging.getLogger("_LocalStorage_")
+        self.logger = logging.getLogger(__name__ + "_LocalStorage_")
         self.logger.info("Initalized local storage")
 
-    def save_checkpoint(self, save_dict, optim_dict, save_name, step : int):
+    def save_checkpoint(self, save_dict, optim_dict, step : int):
+        full_path = self.model_dir / f"checkpoint_{str(step)}.pt"
         torch.save(
             {
                 'model_state_dict': save_dict,
                 'optimizer_state_dict': optim_dict,
                 'step': step,
             }, 
-            self.model_dir / f"{save_name}_{str(step)}.pt"
+            full_path
         )
+        self.logger.info(f"saved checkpoint to {full_path}")
     
     def load_checkpoint(self, load_name):
         # load_name ends with .pt 
+        self.logger.info(f"loaded checkpoint {self.model_dir / load_name}")
         return torch.load(self.model_dir / load_name, map_location="cpu")
 
     def list_checkpoints(self) -> list[str]:
@@ -78,6 +81,7 @@ class LocalStorage(ModelStorage):
             existing = pd.read_csv(results_path)
             data = pd.concat([existing, data], ignore_index=True)
         data.to_csv(results_path, index=False)
+        self.logger.info("saved results.csv file")
 
     def save_dataset(self, encoder: dict, decoder: dict, x: torch.Tensor, y: torch.Tensor): 
         self.data_dir.mkdir(parents=True, exist_ok=True)
@@ -94,25 +98,31 @@ class LocalStorage(ModelStorage):
 
     def load_dataset(self): 
         with open(self.data_dir / "stoi.json", "r") as f:
-            encoder = json.load(f)
+            stoi = json.load(f)
 
         with open(self.data_dir / "itos.json", "r") as f:
-            decoder = {int(k): v for k, v in json.load(f).items()}
+            itos = {int(k): v for k, v in json.load(f).items()}
 
         x = torch.load(self.data_dir / "x.pt")
         y = torch.load(self.data_dir / "y.pt")
 
-        return encoder, decoder, x, y 
+        self.logger.info(f"loaded dataset from {self.data_dir}")
+        return stoi, itos, x, y 
 
 
 class CloudStorage(ModelStorage): 
     def __init__(self, bucket_name: str, model_dir: str, data_dir: str):
         from google.cloud import storage
         self.bucket = storage.Client().bucket(bucket_name)
+        if model_dir.endswith("/"): 
+            model_dir = model_dir[-1]
+        if data_dir.endswith("/"):
+            data_dir = data_dir[-1]
+            
         self.model_dir = model_dir
         self.data_dir = data_dir
-        self.logger = logging.getLogger("_GCSStorage_")
-        self.logger.info("Initalized local storage")
+        self.logger = logging.getLogger(__name__ + "_GCSStorage_")
+        self.logger.info("Initalized cloud storage")
     
     @classmethod 
     def from_config(cls, config): 
@@ -131,8 +141,9 @@ class CloudStorage(ModelStorage):
     def _blob_exists(self, blob_path: str) -> bool:
         return self.bucket.blob(blob_path).exists()
 
-    def save_checkpoint(self, save_dict, optim_dict, save_name, step : int):
-        local_path = f"/tmp/{save_name}_{str(step)}.pt"
+    def save_checkpoint(self, save_dict, optim_dict, step : int):
+        local_path = f"/tmp/checkpoint_{str(step)}.pt"
+        blob_path = f"{self.model_dir}/checkpoint_{str(step)}.pt"
         torch.save(
             {
                 'model_state_dict': save_dict,
@@ -141,21 +152,24 @@ class CloudStorage(ModelStorage):
             }, 
             local_path
         )
-        self._upload(f"{self.model_dir}/{save_name}_{str(step)}.pt", local_path)
+        self._upload(blob_path, local_path)
         os.remove(local_path)
+        self.logger.info(f"saved checkpoint to {blob_path}")
     
     def load_checkpoint(self, load_name):
         local_path = f"/tmp/{load_name}"
-        self._download(f"{self.model_dir}/{load_name}", local_path)
+        blob_path = f"{self.model_dir}/{load_name}"
+        self._download(blob_path, local_path)
         checkpoint = torch.load(local_path, map_location="cpu")
         os.remove(local_path)
+        self.logger.info(f"loaded checkpoint {blob_path}")
         return checkpoint
     
     def list_checkpoints(self) -> list[str]:
         all_files = [x.name for x in list(self.bucket.list_blobs(prefix=f"{self.model_dir}/"))]
         sorted_paths = sorted(
             [os.path.basename(f) for f in all_files if f.suffix == '.pt'],
-            key=lambda f: int(f.stem.split('_')[-1])
+            key=lambda f: int(f.replace('.pt', '').split('_')[-1])
         )
         return sorted_paths
 
@@ -171,6 +185,7 @@ class CloudStorage(ModelStorage):
         data.to_csv(local_path, index=False)
         self._upload(blob_path, local_path)
         os.remove(local_path)
+        self.logger.info(f"saved results to {blob_path}")
 
     def save_dataset(self, encoder: dict, decoder: dict, x: torch.Tensor, y: torch.Tensor):
         # Save locally to /tmp, upload, clean up
@@ -186,6 +201,8 @@ class CloudStorage(ModelStorage):
             save_fn(local_path)
             self._upload(f"{self.data_dir}/{filename}", local_path)
             os.remove(local_path)
+        
+        self.logger.info(f"saved dataset at {self.data_dir}")
 
     def load_dataset(self):
         filenames = ["stoi.json", "itos.json", "x.pt", "y.pt"]
@@ -193,10 +210,10 @@ class CloudStorage(ModelStorage):
             self._download(f"{self.data_dir}/{filename}", f"/tmp/{filename}")
 
         with open("/tmp/stoi.json", "r") as f:
-            encoder = json.load(f)
+            stoi = json.load(f)
 
         with open("/tmp/itos.json", "r") as f:
-            decoder = {int(k): v for k, v in json.load(f).items()}
+            itos = {int(k): v for k, v in json.load(f).items()}
 
         x = torch.load("/tmp/x.pt", map_location="cpu")
         y = torch.load("/tmp/y.pt", map_location="cpu")
@@ -204,4 +221,5 @@ class CloudStorage(ModelStorage):
         for filename in filenames:
             os.remove(f"/tmp/{filename}")
 
-        return encoder, decoder, x, y 
+        self.logger.info(f"loaded dataset from {self.data_dir}")
+        return stoi, itos, x, y 

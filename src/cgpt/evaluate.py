@@ -22,8 +22,8 @@ def show_board(board, display_game, size=250, delay=0):
 def play_game_test(
         model, 
         stockfish ,
-        encoder,
-        decoder,
+        stoi,
+        itos,
         device, 
         stock_lvl : int = 1, 
         display_game : bool = False, 
@@ -49,12 +49,12 @@ def play_game_test(
             san_moves.append(temp_board.san(move))
             temp_board.push(move)
         
-        enc_game = [encoder[t] for t in san_moves]
+        enc_game = [stoi[t] for t in san_moves]
         idx = torch.tensor([enc_game]).to(device)
         
         # try the top move first
         move_idx = model.generate_single_step(idx)
-        san_move = decoder[move_idx]
+        san_move = itos[move_idx]
         
         legal_san = [board.san(m) for m in board.legal_moves]
         
@@ -68,7 +68,7 @@ def play_game_test(
         probs = model.generate_probs(idx)[0]
         
         # build mask: set all illegal moves to 0
-        legal_indices = [encoder[m] for m in legal_san if m in encoder.keys()]
+        legal_indices = [stoi[m] for m in legal_san if m in stoi.keys()]
         mask = torch.zeros_like(probs)
         mask[legal_indices] = 1
 
@@ -84,7 +84,7 @@ def play_game_test(
         probs = probs / probs.sum()
         
         move_idx = torch.multinomial(probs, num_samples=1).item()
-        san_move = decoder[move_idx]
+        san_move = itos[move_idx]
         board.push_san(san_move)
         return san_move
 
@@ -115,13 +115,13 @@ def play_game_test(
 
     if outcome.winner is None: 
         winner = "draw"
-        logging.info("game played: draw")
+        logging.debug("game played: draw")
     elif outcome.winner: 
         winner = 'stock'
-        logging.info("game played: stock win")
+        logging.debug("game played: stock win")
     else:
         winner = 'model'
-        logging.info("game played: model win")
+        logging.debug("game played: model win")
 
     output = {
         'illegal_moves' : illegal_move_count,

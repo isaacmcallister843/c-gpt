@@ -17,7 +17,7 @@ with open(config_path, 'rb') as f:
 
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s %(name)s %(levelname)s %(message)s'
+    format='%(name)s %(levelname)s %(message)s'
 )
 # ----- set seed 
 torch.manual_seed(42)
@@ -32,11 +32,10 @@ if __name__ == '__main__':
     else:
         storage_manager = LocalStorage.from_config(config)
 
-
     # ----------- Load in datasets 
     # ------ Load in x and y datasets 
-    encoder, decoder, x, y  = storage_manager.load_dataset()
-    vocab_size = len(encoder)
+    stoi, itos, x, y  = storage_manager.load_dataset()
+    vocab_size = len(stoi)
 
     # ------ Create train_data and val_data
     n_rows = x.shape[0]
@@ -60,16 +59,18 @@ if __name__ == '__main__':
         batch_size= config['training']['batch_size'], 
         shuffle=True
     )
-
     # --------- Define Model setup  
     model = GPT.from_config(vocab_size, config)
-    optimzier = torch.optim.AdamW(model.parameters(), lr=config['training']['learning_rate'])
+    optimzier = torch.optim.AdamW(
+        model.parameters(), 
+        lr=config['training']['learning_rate']
+    )
     callbacks = [
         EstimateLossCallback(), 
         SaveCheckPointCallback(),
         PlayGameStockCallback.from_config(
-            encoder=encoder, 
-            decoder=decoder, 
+            stoi=stoi, 
+            itos=itos, 
             config=config
         )
     ]

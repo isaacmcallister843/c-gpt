@@ -1,6 +1,6 @@
 # Lazy type hints 
 from __future__ import annotations
-
+from typing import List 
 import logging 
 from cgpt.evaluate import play_game_test
 import pandas as pd 
@@ -15,7 +15,7 @@ class TrainerCallbacks:
 
 class EstimateLossCallback(TrainerCallbacks): 
     def __init__(self): 
-        self.logger = logging.getLogger("EstimateLossCallback")
+        self.logger = logging.getLogger(__name__ + "_EstimateLossCallback_")
 
     def on_monitor(self, trainer : Trainer): 
         self.logger.info("Step %s: Train Loss = %s, Val Loss = %s", trainer.cur_step, trainer.cur_losses['train'], trainer.cur_losses['val'])
@@ -26,13 +26,12 @@ class EstimateLossCallback(TrainerCallbacks):
 
 class SaveCheckPointCallback(TrainerCallbacks): 
     def __init__(self): 
-        self.logger = logging.getLogger("SaveCheckpointCallback")
+        self.logger = logging.getLogger(__name__ + "_SaveCheckpointCallback_")
 
     def on_save(self, trainer : Trainer): 
         trainer.storage_manager.save_checkpoint(
             save_dict = trainer.model.state_dict(), 
             optim_dict = trainer.optimizer.state_dict(), 
-            save_name = f"checkpoint_{trainer.cur_step}", 
             step = trainer.cur_step
         )
         self.logger.info("Saved checkpoint at step %s", trainer.cur_step)
@@ -41,46 +40,41 @@ class SaveCheckPointCallback(TrainerCallbacks):
 class PlayGameStockCallback(TrainerCallbacks): 
     def __init__(
             self, 
-            stockfish_path, 
-            eval_num_games, 
-            eval_lvl_start, 
-            eval_lvl_end, 
-            eval_lvl_jump,
-            encoder, 
-            decoder,         
+            stockfish_path : int, 
+            eval_num_games : int, 
+            eval_lvls: List[int], 
+            stoi : dict, 
+            itos : dict,         
         ): 
         from stockfish import Stockfish
         self.stockfish = Stockfish(path = stockfish_path)
         self.eval_num_games = eval_num_games
-        self.eval_lvl_start = eval_lvl_start
-        self.eval_lvl_end = eval_lvl_end
-        self.eval_lvl_jump = eval_lvl_jump
-        self.encoder = encoder 
-        self.decoder = decoder 
-        self.logger = logging.getLogger("PlayGameCallback")
+        self.eval_lvls = eval_lvls
+        self.stoi = stoi 
+        self.itos = itos 
+        self.logger = logging.getLogger(__name__ + "_PlayGameCallback_")
 
     @classmethod
-    def from_config(cls, config, encoder, decoder): 
+    def from_config(cls, config, stoi, itos): 
         return cls(
             stockfish_path = config['evaluation']['stockfish_path'],
             eval_num_games = config['evaluation']['eval_num_games'],
-            eval_lvl_start = config['evaluation']['eval_lvl_start'],
-            eval_lvl_end = config['evaluation']['eval_lvl_end'],
-            eval_lvl_jump = config['evaluation']['eval_lvl_jump'],
-            encoder = encoder, 
-            decoder = decoder
+            eval_lvls = config['evaluation']['eval_lvls'],
+            stoi = stoi, 
+            itos = itos
         )
 
     def on_save(self, trainer : Trainer): 
+        self.logger.info("Starting game evaluation")
         test_results = []
         for _ in range(self.eval_num_games): 
-            for lvl in range(self.eval_lvl_start, self.eval_lvl_end, self.eval_lvl_jump):
+            for lvl in self.eval_lvls:
                 output_dict = play_game_test(
                     model = trainer.model, 
                     stock_lvl = lvl, 
                     stockfish = self.stockfish,
-                    encoder = self.encoder, 
-                    decoder = self.decoder, 
+                    stoi = self.stoi, 
+                    itos = self.itos, 
                     device = trainer.device
                 )
 
