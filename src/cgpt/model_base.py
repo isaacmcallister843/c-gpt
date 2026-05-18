@@ -72,7 +72,6 @@ class Block(nn.Module):
 
 class GPT(nn.Module):
     def __init__(self, vocab_size, n_embd, n_head, n_layer, block_size, dropout, device):
-                
         super().__init__()
         self.block_size = block_size
         self.device = device
@@ -82,6 +81,19 @@ class GPT(nn.Module):
         self.ln_f = nn.LayerNorm(n_embd)
         self.lm_head = nn.Linear(n_embd, vocab_size)
 
+    @property 
+    def num_parameters(self): 
+        return sum(p.numel() for p in self.parameters() if p.requires_grad)
+
+    def __repr__(self):
+        return f"""
+            n_embd = {self.n_embd}, 
+            n_head = {self.n_head}, 
+            n_layer = {self.n_layer},
+            block_size = {self.block_size}, 
+
+        """
+    
     def forward(self, idx, targets=None):
         B, T = idx.shape
         tok_emb = self.token_embedding_table(idx)
@@ -117,3 +129,15 @@ class GPT(nn.Module):
 
     def generate_single_step(self, idx):
         return self.generate(idx, max_new_tokens=1)[0][-1].item()
+    
+    @classmethod
+    def from_config(cls, vocab_size, config): 
+        return cls(
+        vocab_size = vocab_size,
+        n_embd = config['model']['n_embd'],
+        n_head = config['model']['n_head'],
+        n_layer = config['model']['n_layer'],
+        block_size = config['model']['block_size'],
+        dropout = config['model']['dropout'],
+        device = config['training']['device'],
+    ).to(config['training']['device'])

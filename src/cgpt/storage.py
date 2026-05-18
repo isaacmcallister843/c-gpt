@@ -5,6 +5,7 @@ import torch
 import os 
 import json 
 import pandas as pd
+import logging
 
 class ModelStorage(ABC): 
     @abstractmethod
@@ -47,6 +48,8 @@ class LocalStorage(ModelStorage):
 
         self.data_dir = data_dir 
         self.data_dir.mkdir(parents=True, exist_ok=True)
+        self.logger = logging.getLogger("_LocalStorage_")
+        self.logger.info("Initalized local storage")
 
     def save_checkpoint(self, save_dict, optim_dict, save_name, step : int):
         torch.save(
@@ -55,7 +58,7 @@ class LocalStorage(ModelStorage):
                 'optimizer_state_dict': optim_dict,
                 'step': step,
             }, 
-            self.model_dir / f"{save_name}.pt"
+            self.model_dir / f"{save_name}_{str(step)}.pt"
         )
     
     def load_checkpoint(self, load_name):
@@ -87,6 +90,7 @@ class LocalStorage(ModelStorage):
 
         torch.save(x, self.data_dir / "x.pt")
         torch.save(y, self.data_dir / "y.pt") 
+        self.logger.info(f"saved dataset at {self.data_dir}")
 
     def load_dataset(self): 
         with open(self.data_dir / "stoi.json", "r") as f:
@@ -107,6 +111,8 @@ class CloudStorage(ModelStorage):
         self.bucket = storage.Client().bucket(bucket_name)
         self.model_dir = model_dir
         self.data_dir = data_dir
+        self.logger = logging.getLogger("_GCSStorage_")
+        self.logger.info("Initalized local storage")
     
     @classmethod 
     def from_config(cls, config): 
@@ -126,7 +132,7 @@ class CloudStorage(ModelStorage):
         return self.bucket.blob(blob_path).exists()
 
     def save_checkpoint(self, save_dict, optim_dict, save_name, step : int):
-        local_path = f"/tmp/{save_name}.pt"
+        local_path = f"/tmp/{save_name}_{str(step)}.pt"
         torch.save(
             {
                 'model_state_dict': save_dict,
@@ -135,7 +141,7 @@ class CloudStorage(ModelStorage):
             }, 
             local_path
         )
-        self._upload(f"{self.model_dir}/{save_name}.pt", local_path)
+        self._upload(f"{self.model_dir}/{save_name}_{str(step)}.pt", local_path)
         os.remove(local_path)
     
     def load_checkpoint(self, load_name):
@@ -144,11 +150,14 @@ class CloudStorage(ModelStorage):
         checkpoint = torch.load(local_path, map_location="cpu")
         os.remove(local_path)
         return checkpoint
-
+    
     def list_checkpoints(self) -> list[str]:
         all_files = [x.name for x in list(self.bucket.list_blobs(prefix=f"{self.model_dir}/"))]
-        return [os.path.basename(x) for x in all_files if x.endswith('.pt')]
-
+        sorted_paths = sorted(
+            [os.path.basename(f) for f in all_files if f.suffix == '.pt'],
+            key=lambda f: int(f.stem.split('_')[-1])
+        )
+        return sorted_paths
 
     def save_results(self, data: pd.DataFrame) -> None:
         blob_path = f"{self.model_dir}/results.csv"

@@ -1,8 +1,10 @@
 from . import model_base 
+import logging  
 import torch 
 
+logger = logging.getLogger(__name__)
 # ----- Simple load test 
-def test_load_model_GPT(model_config, device, vocab_size) -> None:
+def test_load_model_GPT(model_config : dict, device : str, vocab_size : int) -> None:
     model = model_base.GPT(
         vocab_size=vocab_size,
         n_embd=model_config["n_embd"],
@@ -12,14 +14,13 @@ def test_load_model_GPT(model_config, device, vocab_size) -> None:
         dropout=model_config["dropout"],
         device= device
     )
-    print("number of parameters in model : ", sum(p.numel() for p in model.parameters() if p.requires_grad)) 
+    logger.info("Model loaded successfully, with num parameters : %d", model.num_parameters)
 
-def test_load_stockfish(STOCK_FISH_DIR):
+def test_load_stockfish(STOCK_FISH_DIR: str) -> None:
     from stockfish import Stockfish
     stockfish = Stockfish(path= STOCK_FISH_DIR)
-    print("Loaded stockfish correctly")
+    logger.info("Stockfish loaded successfully")
 
-def test_block_size_to_model_align(block_size, x):
-    print(
-        f"Context and dataset aligned?:  {x.shape[1] == block_size}  x_shape: , {x.shape[1]}, block_size:  {block_size}"
-    )
+def test_block_size_to_model_align(block_size : int , x : torch.Tensor) -> None:
+    assert x.shape[1] == block_size
+    logger.info("Block size of %d aligns with x dataset shape of %s", block_size, x.shape)

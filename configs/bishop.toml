@@ -11,8 +11,8 @@ save_name = "bishop"
 batch_size = 12
 learning_rate = 3e-4
 max_iters = 30
-save_and_eval_interval = 15
-print_loss_interval = 5 
+save_event_inter = 15
+monitor_event_inter = 5
 loss_eval_iter = 5 
 device = 'cpu'
 train_test_split = 0.9
@@ -20,7 +20,7 @@ continue_training = 0
 
 [data]
 min_elo = 2100
-n_rows = 2000
+n_rows = 100000
 dataset_name = "small_set" 
 san_string_path = "misc/san_strings/san_string.txt"
 dataset_path = "data/raw/dataset.parquet"

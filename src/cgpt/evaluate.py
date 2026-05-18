@@ -1,15 +1,12 @@
 # ------ Libraries
-import json 
-from pathlib import Path
 import time 
-from stockfish import Stockfish
-
+import logging 
 import chess 
 import chess.svg
 import torch 
-from .model_base import GPT
 
 # ----------- Setup 
+logger = logging.getLogger(__name__)
 
 # ----- Evaluation Tests  
 # methods to display the board 
@@ -39,7 +36,7 @@ def play_game_test(
     # set variables 
     illegal_move_count = 0
     total_moves = 0
-    size=250
+    size = 250
     stockfish.set_skill_level(stock_lvl)
 
     # methods to play a chess game 
@@ -65,6 +62,7 @@ def play_game_test(
             board.push_san(san_move)
             return san_move
         
+        logging.debug("illegal move made updating counter")
         # illegal move -- mask and resample
         illegal_move_count += 1
         probs = model.generate_probs(idx)[0]
@@ -78,6 +76,7 @@ def play_game_test(
 
         # Check if sum is 0, if so make a random move - this shouldnt really call 
         if probs.sum() < 1e-9:
+            logging.warning("probability sum 0 - making random move")
             san_move = legal_san[torch.randint(len(legal_san), (1,)).item()]
             board.push_san(san_move)
             return san_move
@@ -116,10 +115,13 @@ def play_game_test(
 
     if outcome.winner is None: 
         winner = "draw"
+        logging.info("game played: draw")
     elif outcome.winner: 
         winner = 'stock'
+        logging.info("game played: stock win")
     else:
         winner = 'model'
+        logging.info("game played: model win")
 
     output = {
         'illegal_moves' : illegal_move_count,
@@ -128,4 +130,5 @@ def play_game_test(
         'winner' : winner,
         'game_length' : total_moves
     }
+    logging.debug("game played, output created")
     return output 
