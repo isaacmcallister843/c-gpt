@@ -21,7 +21,7 @@ continue_training = 0
 [data]
 min_elo = 2100
 n_rows = 1000000
-dataset_name = "small_set" 
+dataset_name = "main_set" 
 san_string_path = "misc/san_strings/san_string.txt"
 dataset_path = "data/raw/dataset.parquet"
 
