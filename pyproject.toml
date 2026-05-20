@@ -2,17 +2,19 @@
 name = "cgpt"
 version = "0.2.0"
 requires-python = ">=3.12"
-  
+
 dependencies = [
     "chess",
     "numpy",
     "pandas",
     "stockfish",
-    "torch",
 ]
 
+# Note: torch must be installed separately with CUDA support
+# pip install torch --index-url https://download.pytorch.org/whl/cu121
+
 [project.optional-dependencies]
-cloud = ["google-cloud-storage", "pyarrow[gcs]"]
+cloud = ["google-cloud-storage"]
 notebooks = ["ipython"]
 
 [tool.setuptools.packages.find]

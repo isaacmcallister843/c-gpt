@@ -28,7 +28,7 @@ dataset_path = "data/raw/dataset.parquet"
 [evaluation]
 eval_num_games = 1
 eval_lvls = [1,5,10]
-stockfish_path = "misc/stockfish/stockfish-windows-armv8.exe"
+stockfish_path = "stockfish"
 
 [save]
 save_cloud = 1 

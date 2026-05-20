@@ -3,7 +3,7 @@ set -e
 
 echo "=== System packages ==="
 sudo apt-get update
-sudo apt-get install -y stockfish git
+sudo apt-get install -y stockfish
 
 echo "=== Python 3.12 ==="
 sudo add-apt-repository -y ppa:deadsnakes/ppa
@@ -14,8 +14,10 @@ echo "=== Venv setup ==="
 python3.12 -m venv venv
 source venv/bin/activate
 pip install -U pip
+echo "source ~/c-gpt/venv/bin/activate" >> ~/.bashrc
 
 echo "=== Project dependencies ==="
+pip install torch --index-url https://download.pytorch.org/whl/cu121
 pip install -e .
 pip install -e ".[cloud]"
 
@@ -23,5 +25,6 @@ echo "=== Verify ==="
 python -c "import torch; print('CUDA:', torch.cuda.is_available())"
 python -c "from cgpt.model_base import GPT; print('Package imports work')"
 nvidia-smi
+
 
 echo "=== Done ==="
