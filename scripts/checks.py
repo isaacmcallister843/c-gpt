@@ -15,7 +15,7 @@ if __name__ == '__main__':
     with open(config_path, 'rb') as f:
         config = tomllib.load(f)
 
-    save_cloud = config['storage']['save_cloud']
+    save_cloud = config['save']['save_cloud']
     device = config['training']['device']
 
     if save_cloud: 

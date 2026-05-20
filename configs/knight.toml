@@ -11,17 +11,17 @@ save_name = "knight"
 batch_size = 64
 learning_rate = 3e-4
 max_iters = 70000
-save_event_inter = 10000
-monitor_event_inter = 3000
+save_event_inter = 5000
+monitor_event_inter = 50
 loss_eval_iter = 5 
 device = 'cuda'
 train_test_split = 0.9
 
 [data]
 min_elo = 2100
-n_rows = 100000
+n_rows = 16000000
 dataset_name = "main_set" 
-dataset_path = "gs://c-gpt-data/datasets/dataset.parquet"
+dataset_path = "/home/isaac/c-gpt/data/dataset.parquet"
 san_string_path = "misc/san_strings/san_string.txt"
 
 [evaluation]

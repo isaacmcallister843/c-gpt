@@ -1,0 +1,7 @@
+services:
+  cgpt:
+    build: .
+    runtime: nvidia
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models

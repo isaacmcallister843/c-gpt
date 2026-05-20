@@ -1,14 +1,15 @@
 # ----------- Libraries 
 import torch
 import sys
+import tomllib
+import logging 
+
 from cgpt.model_base import GPT 
 from cgpt.storage import LocalStorage, CloudStorage
 from cgpt.trainer import Trainer
 from cgpt.callbacks import EstimateLossCallback, SaveCheckPointCallback, PlayGameStockCallback
 from cgpt.datasets import ChessDataset
 from torch.utils.data import DataLoader
-import tomllib
-import logging 
 # ----------- Setup 
 
 config_path = sys.argv[1]
@@ -26,7 +27,7 @@ torch.manual_seed(42)
 if __name__ == '__main__': 
         
     # ----- Setup storage manager  
-    save_cloud = config['save_cloud']
+    save_cloud = config['save']['save_cloud']
     if save_cloud: 
         storage_manager = CloudStorage.from_config(config)
     else:
@@ -65,41 +66,24 @@ if __name__ == '__main__':
         model.parameters(), 
         lr=config['training']['learning_rate']
     )
+    
     callbacks = [
         EstimateLossCallback(), 
         SaveCheckPointCallback(),
         PlayGameStockCallback.from_config(
-            stoi=stoi, 
-            itos=itos, 
-            config=config
+            stoi = stoi, 
+            itos = itos, 
+            config = config
         )
     ]
     trainer = Trainer.from_config(
         model = model, 
-        optimzier=optimzier, 
-        callbacks=callbacks, 
-        train_loader=train_data, 
-        val_loader=val_data, 
-        storage_manager=storage_manager, 
+        optimzier = optimzier, 
+        callbacks = callbacks, 
+        train_loader = train_data, 
+        val_loader = val_data, 
+        storage_manager = storage_manager, 
         config=config
     )
 
     trainer.train()
-
-
-    # if training_params['continue_training']:
-    #     files = storage_manager.list_checkpoints()
-        
-    #     if len(files) == 0: 
-    #         print('no valid checkpoints to load, start a new training run')
-    #         sys.exit(0)
-
-    #     last_chk_pt = files[-1]
-    #     print('loading chk_pt : ',  last_chk_pt)
-
-    #     checkpoint = storage_manager.load_checkpoint(last_chk_pt)
-
-    #     model.load_state_dict(checkpoint['model_state_dict'])
-    #     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    #     start_iter = checkpoint['step']
-    #     model.train()

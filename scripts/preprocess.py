@@ -7,7 +7,7 @@ from cgpt.storage import LocalStorage, CloudStorage
 import tomllib
 import logging
 import pyarrow.fs as fs
-
+import gcsfs
 # ----------- Setup 
 config_path = sys.argv[1]
 with open(config_path, 'rb') as f:
@@ -24,20 +24,17 @@ if __name__ == '__main__':
     save_cloud = config['save']['save_cloud']
     if save_cloud: 
         storage_manager = CloudStorage.from_config(config)
-        path = config['data']['dataset_path'].replace('gs://', '') # gs url expected 
-        parquet_file = pq.ParquetFile(
-            path, 
-            filesystem = fs.GcsFileSystem()
-        )
     else:
         storage_manager = LocalStorage.from_config(config)
-        parquet_file = pq.ParquetFile(config['data']['dataset_path'])
+    parquet_file = pq.ParquetFile(config['data']['dataset_path'])
+    logger.info("File opened")
+
 
     # ----- Setup 
     block_size = config['model']['block_size']
     n_rows = config['data']['n_rows']
     min_elo = config['data']['min_elo']
-    chunk_size = 500000
+    chunk_size = 50000
 
     # ------ create mapping
     stoi = {'<PAD>': 0}
@@ -58,6 +55,7 @@ if __name__ == '__main__':
     # ------ Proccess file 
     chunks = []
     total_rows = 0
+    logger.info("starting read")
     for batch in parquet_file.iter_batches(batch_size=chunk_size):
         df = batch.to_pandas()
         df = df[df['white_elo'] > min_elo]
@@ -68,7 +66,7 @@ if __name__ == '__main__':
         )
         stack = np.stack(add.values)
         chunks.append(encode_vec(stack))
-        logger.info(f"Processed chunk, {len(chunks)} done")
+        logger.info(f"Processed chunk, {len(chunks)}, with {total_rows} rows")
         if total_rows > n_rows: 
             logger.info(f"ended loop with n_rows = {total_rows}, target = {n_rows}")
             break 

@@ -19,16 +19,3 @@ def infinite_loader(loader):
     while True:
         for batch in loader: 
             yield batch 
-
-def create_loader_generator(x, y, block_size, batch_size):
-    return infinite_loader(
-        DataLoader(
-            ChessDataset(
-                x = x, 
-                y = y, 
-                block_size=block_size
-            ), 
-            batch_size = batch_size, 
-            shuffle=True
-        )
-    )
