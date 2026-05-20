@@ -1,8 +1,8 @@
 # configs/knight.toml
 [model]
-n_embd = 256
+n_embd = 512
 n_head = 8
-n_layer = 10
+n_layer = 12
 block_size = 120
 dropout = 0.2
 save_name = "knight"
@@ -10,7 +10,7 @@ save_name = "knight"
 [training]
 batch_size = 64
 learning_rate = 3e-4
-max_iters = 70000
+max_iters = 10000
 save_event_inter = 5000
 monitor_event_inter = 50
 loss_eval_iter = 5 

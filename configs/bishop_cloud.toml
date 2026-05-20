@@ -1,0 +1,37 @@
+# configs/bishop.toml
+[model]
+n_embd = 32
+n_head = 4
+n_layer = 4
+block_size = 120
+dropout = 0.2
+save_name = "bishop"
+
+[training]
+batch_size = 12
+learning_rate = 3e-4
+max_iters = 30
+save_event_inter = 15
+monitor_event_inter = 5
+loss_eval_iter = 5 
+device = 'cpu'
+train_test_split = 0.9
+continue_training = 0 
+
+[data]
+min_elo = 2100
+n_rows = 1000000
+dataset_name = "small_set" 
+san_string_path = "misc/san_strings/san_string.txt"
+dataset_path = "data/raw/dataset.parquet"
+
+[evaluation]
+eval_num_games = 1
+eval_lvls = [1,5,10]
+stockfish_path = "misc/stockfish/stockfish-windows-armv8.exe"
+
+[save]
+save_cloud = 1 
+
+[cloud]
+bucket_name = 'c-gpt-data'
