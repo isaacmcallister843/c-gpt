@@ -158,7 +158,6 @@ class CloudStorage(ModelStorage):
         if wait: 
             thread.join()
         
-
     def _download(self, blob_path: str, local_path: str) -> None:
         self.logger.info(f"downloading {blob_path} -> {local_path}")
         self.bucket.blob(blob_path).download_to_filename(local_path)

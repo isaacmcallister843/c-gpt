@@ -5,7 +5,7 @@ n_head = 4
 n_layer = 4
 block_size = 120
 dropout = 0.2
-save_name = "bishop"
+save_name = "bishop_cloud"
 
 [training]
 batch_size = 12

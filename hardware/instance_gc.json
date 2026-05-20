@@ -1,0 +1,139 @@
+{
+  "canIpForward": false,
+  "confidentialInstanceConfig": {
+    "enableConfidentialCompute": false
+  },
+  "cpuPlatform": "Intel Broadwell",
+  "creationTimestamp": "2026-05-20T08:58:13.505-07:00",
+  "deletionProtection": false,
+  "description": "",
+  "disks": [
+    {
+      "guestOsFeatures": [
+        {
+          "type": "VIRTIO_SCSI_MULTIQUEUE"
+        },
+        {
+          "type": "UEFI_COMPATIBLE"
+        },
+        {
+          "type": "GVNIC"
+        }
+      ],
+      "type": "PERSISTENT",
+      "licenses": [
+        "projects/click-to-deploy-images/global/licenses/c2d-dl-platform-dlvm",
+        "projects/click-to-deploy-images/global/licenses/c2d-dl-platform-gvnic",
+        "projects/click-to-deploy-images/global/licenses/c2d-dl-platform-py310",
+        "projects/click-to-deploy-images/global/licenses/c2d-dl-platform-gpu-common-cu129",
+        "projects/click-to-deploy-images/global/licenses/c2d-dl-platform-ubuntu-2204",
+        "projects/click-to-deploy-images/global/licenses/c2d-dl-platform-ml-images"
+      ],
+      "deviceName": "train-instance",
+      "autoDelete": true,
+      "source": "projects/c-gpt-training/zones/asia-east1-c/disks/train-instance",
+      "index": 0,
+      "boot": true,
+      "kind": "compute#attachedDisk",
+      "mode": "READ_WRITE",
+      "interface": "SCSI",
+      "diskSizeGb": "100"
+    }
+  ],
+  "displayDevice": {
+    "enableDisplay": false
+  },
+  "fingerprint": "QSAf8x2i0HQ=",
+  "guestAccelerators": [
+    {
+      "acceleratorCount": 1,
+      "acceleratorType": "projects/c-gpt-training/zones/asia-east1-c/acceleratorTypes/nvidia-tesla-t4"
+    }
+  ],
+  "id": "5573540889380283644",
+  "keyRevocationActionType": "NONE",
+  "kind": "compute#instance",
+  "labelFingerprint": "42WmSpB8rSM=",
+  "lastStartTimestamp": "2026-05-20T08:58:39.902-07:00",
+  "machineType": "projects/c-gpt-training/zones/asia-east1-c/machineTypes/n1-highmem-16",
+  "metadata": {
+    "fingerprint": "rSirKpemwso=",
+    "kind": "compute#metadata",
+    "items": [
+      {
+        "value": "isaac_mcallister:ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBMl81s53cRqw4/ierCKNWn317zCa0snnUvF99TN5WdWK3RF85yz64hv3NRJ66sQLlE+FLuvddDjzU7E8WlzBZvs= google-ssh {\"userName\":\"isaac.mcallister@gmail.com\",\"expireOn\":\"2026-05-20T16:01:55+0000\"}\nisaac_mcallister:ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCWwmuNJkO8OS7PA0srUTS2ES0kOXy9Ud86mZdTDrx0BksfOhkjY8kXbg0tmUfSKUmS6i5t8/0IBJvveItfkHGfVpoZgPjYk7iN6rlGJ6L9nqODdH9DyYifWRcb5TQgV/Kchkl5h8yVosri6DjJzb1E+ew30g94htRxuc4T9lTLwdDMuJNIHF8+s4CfisPlAPOjCyLUl1nsn8dD+RLgMHf+8wghOcOJZQKL9XvhIWm9qDX5rhuLYkjxn8G4elqUpOCOS0VKvFNXUpssxSbOIuMVcTa8D5gQrg2N7TbE9QuXIJ1LQQ5ABlEAsSsv3+CTjlh8Lw2vvvSXv+pWsN3F0I89 google-ssh {\"userName\":\"isaac.mcallister@gmail.com\",\"expireOn\":\"2026-05-20T16:01:58+0000\"}\nisaac_mcallister:ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBIyMVlmAzdJrvCq+9QILcCAtX+ESRTm62Slw0P52E/gOSUSMFIfXTKWDy8WF+cm7NgoMl0jyr9r2b7FgfG452kU= google-ssh {\"userName\":\"isaac.mcallister@gmail.com\",\"expireOn\":\"2026-05-20T16:02:01+0000\"}\nisaac_mcallister:ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCu/pyQtaVVPLzRhih/4twW4x/o6F4qn8DnEyEJWsDX6qxrufsnCbAbE377Gc5AEn7ldBnIZEBMdrOMf+Y4MBk+u1KW1e3QcXGuO7g+lm82h0PFs+WuaiAvV0smOHR31cjFcRYRcfezRtoBIptiOXnnzz57mVCfvdTwoo+mPY7FNUJ653CJqT3l651KADiKanM3LV8DfGCiUI3LybrlDCAJBqul4c3eMRWY++ZLuMU8vBoiSoS6MklmjP9k4op6DWQkF399iZs42IyGbJDLcRKeXuZjVQzyeMmhLzO1GcwzKG+UIVZB2Bg+T8EiZTsjDjd2Y4kcoDChVziq+wBpNN7l google-ssh {\"userName\":\"isaac.mcallister@gmail.com\",\"expireOn\":\"2026-05-20T16:02:05+0000\"}",
+        "key": "ssh-keys"
+      }
+    ]
+  },
+  "name": "train-instance",
+  "networkInterfaces": [
+    {
+      "stackType": "IPV4_ONLY",
+      "name": "nic0",
+      "network": "projects/c-gpt-training/global/networks/default",
+      "accessConfigs": [
+        {
+          "name": "External NAT",
+          "type": "ONE_TO_ONE_NAT",
+          "natIP": "35.194.253.173",
+          "kind": "compute#accessConfig",
+          "networkTier": "PREMIUM"
+        }
+      ],
+      "subnetwork": "projects/c-gpt-training/regions/asia-east1/subnetworks/default",
+      "networkIP": "10.140.0.2",
+      "fingerprint": "88X07CjGo18=",
+      "kind": "compute#networkInterface"
+    }
+  ],
+  "reservationAffinity": {
+    "consumeReservationType": "NO_RESERVATION"
+  },
+  "resourceStatus": {
+    "scheduling": {},
+    "effectiveInstanceMetadata": {}
+  },
+  "satisfiesPzi": true,
+  "scheduling": {
+    "onHostMaintenance": "TERMINATE",
+    "provisioningModel": "STANDARD",
+    "automaticRestart": false,
+    "preemptible": false
+  },
+  "selfLink": "projects/c-gpt-training/zones/asia-east1-c/instances/train-instance",
+  "serviceAccounts": [
+    {
+      "email": "417504902096-compute@developer.gserviceaccount.com",
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    }
+  ],
+  "shieldedInstanceConfig": {
+    "enableSecureBoot": false,
+    "enableVtpm": true,
+    "enableIntegrityMonitoring": true
+  },
+  "shieldedInstanceIntegrityPolicy": {
+    "updateAutoLearnPolicy": true
+  },
+  "shieldedVmConfig": {
+    "enableSecureBoot": false,
+    "enableVtpm": true,
+    "enableIntegrityMonitoring": true
+  },
+  "shieldedVmIntegrityPolicy": {
+    "updateAutoLearnPolicy": true
+  },
+  "startRestricted": false,
+  "status": "RUNNING",
+  "tags": {
+    "items": [
+      "http-server",
+      "https-server"
+    ],
+    "fingerprint": "6smc4R4d39I="
+  },
+  "zone": "projects/c-gpt-training/zones/asia-east1-c"
+}

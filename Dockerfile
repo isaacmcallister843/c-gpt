@@ -7,5 +7,4 @@ RUN apt-get install -y stockfish pip && rm -rf /var/lib/apt/lists/*
 
 COPY . .
 
-RUN pip install -U pip
-RUN pip install -e ".[cloud]"
+RUN bash setup.sh 

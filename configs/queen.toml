@@ -1,16 +1,16 @@
-# configs/knight.toml
+# configs/queen.toml
 [model]
 n_embd = 512
-n_head = 8
+n_head = 12
 n_layer = 12
 block_size = 120
 dropout = 0.2
-save_name = "knight"
+save_name = "queen"
 
 [training]
 batch_size = 64
 learning_rate = 3e-4
-max_iters = 10000
+max_iters = 100000
 save_event_inter = 5000
 monitor_event_inter = 50
 loss_eval_iter = 5 
@@ -18,11 +18,7 @@ device = 'cuda'
 train_test_split = 0.9
 
 [data]
-min_elo = 2100
-n_rows = 16000000
 dataset_name = "main_set" 
-dataset_path = "/data/dataset.parquet"
-san_string_path = "misc/san_strings/san_string.txt"
 
 [evaluation]
 eval_num_games = 3
